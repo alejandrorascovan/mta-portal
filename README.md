@@ -1,6 +1,6 @@
 # MTA Portal
 
-<img src="MTAPortal.jpg" alt="drawing" width="200"/>
+<img src="MTAPortal.jpg" alt="drawing" width="300"/>
 
 Run your own MTA Portal to display trains arrivals using Adafruit's [hardware](https://www.adafruit.com/product/4812) and libraries.
 
