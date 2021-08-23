@@ -12,6 +12,7 @@ DATA_SOURCE = 'https://api.wheresthefuckingtrain.com/by-id/%s' % (STOP_ID,)
 DATA_LOCATION = ["data"]
 UPDATE_DELAY = 15
 MINIMUM_MINUTES_DISPLAY = 9
+BACKGROUND_IMAGE = 'g-dashboard.bmp'
 
 def get_arrival_in_minutes_from_now(now, date_str):
     train_date = datetime.fromisoformat(date_str).replace(tzinfo=None)
@@ -49,7 +50,7 @@ network = Network(status_neopixel=NEOPIXEL, debug=False)
 
 # --- Drawing setup ---
 group = displayio.Group()
-bitmap = displayio.OnDiskBitmap(open('example9.bmp', 'rb'))
+bitmap = displayio.OnDiskBitmap(open(BACKGROUND_IMAGE, 'rb'))
 tile_grid = displayio.TileGrid(bitmap, pixel_shader=getattr(bitmap, 'pixel_shader', displayio.ColorConverter()))
 group.append(tile_grid)
 color = displayio.Palette(2)
