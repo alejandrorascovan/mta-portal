@@ -1,10 +1,10 @@
 # MTA Portal
 
-![MTA Portal](./MTA Portal.jpg)
+![Image of Yaktocat](./MTAPortal.jpg)
 
 Run your own MTA Portal to display trains arrivals using Adafruit's [hardware](https://www.adafruit.com/product/4812) and libraries.
 
-Follow Adafruit main [tutorial](https://learn.adafruit.com/adafruit-matrixportal-m4) to set up your MatrixPortal
+Follow Adafruit main [tutorial](https://learn.adafruit.com/adafruit-matrixportal-m4) to set up your MatrixPortal.
 
 ## Config
 
