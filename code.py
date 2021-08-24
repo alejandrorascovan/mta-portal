@@ -15,7 +15,7 @@ MINIMUM_MINUTES_DISPLAY = 9
 BACKGROUND_IMAGE = 'g-dashboard.bmp'
 
 def get_arrival_in_minutes_from_now(now, date_str):
-    train_date = datetime.fromisoformat(date_str).replace(tzinfo=None)
+    train_date = datetime.fromisoformat(date_str).replace(tzinfo=None) # Remove tzinfo to be able to diff dates
     return round((train_date-now).total_seconds()/60.0)
 
 def get_arrival_times():
@@ -31,9 +31,9 @@ def get_arrival_times():
     n = [str(x) for x in nortbound_arrivals if x>= MINIMUM_MINUTES_DISPLAY]
     s = [str(x) for x in southound_arrivals if x>= MINIMUM_MINUTES_DISPLAY]
 
-    n0 = n[0]
+    n0 = n[0] if len(n) > 0 else '-'
     n1 = n[1] if len(n) > 1 else '-'
-    s0 = s[0]
+    s0 = s[0] if len(s) > 0 else '-'
     s1 = s[1] if len(s) > 1 else '-'
 
     return n0,n1,s0,s1
@@ -57,11 +57,11 @@ color = displayio.Palette(2)
 color[0] = 0x444444  # dim white
 color[1] = 0xDD8000  # gold
 
-font1 = bitmap_font.load_font("fonts/6x10.bdf")
-text_line1 = adafruit_display_text.label.Label(font1, color=color[0], x=20, y=3, text="Queens")
-text_line2 = adafruit_display_text.label.Label(font1, color=color[1], x=20, y=11, text="- mins")
-text_line3 = adafruit_display_text.label.Label(font1, color=color[0], x=20, y=20, text="Church")
-text_line4 = adafruit_display_text.label.Label(font1, color=color[1], x=20, y=28, text="- mins")
+font = bitmap_font.load_font("fonts/6x10.bdf")
+text_line1 = adafruit_display_text.label.Label(font, color=color[0], x=20, y=3, text="Queens")
+text_line2 = adafruit_display_text.label.Label(font, color=color[1], x=20, y=11, text="- mins")
+text_line3 = adafruit_display_text.label.Label(font, color=color[0], x=20, y=20, text="Church")
+text_line4 = adafruit_display_text.label.Label(font, color=color[1], x=20, y=28, text="- mins")
 group.append(text_line1)
 group.append(text_line2)
 group.append(text_line3)
