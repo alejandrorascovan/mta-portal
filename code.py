@@ -12,6 +12,7 @@ STOP_ID = 'b994'
 DATA_SOURCE = 'https://api.wheresthefuckingtrain.com/by-id/%s' % (STOP_ID,)
 DATA_LOCATION = ["data"]
 UPDATE_DELAY = 15
+SYNC_TIME_DELAY = 30
 MINIMUM_MINUTES_DISPLAY = 9
 BACKGROUND_IMAGE = 'g-dashboard.bmp'
 ERROR_RESET_THRESHOLD = 3
@@ -27,14 +28,13 @@ def get_arrival_times():
     southbound_trains = [x['time'] for x in stop_data['S']]
 
     now = datetime.now()
+    print("Now: ", now)
+
     nortbound_arrivals = [get_arrival_in_minutes_from_now(now, x) for x in nortbound_trains]
     southound_arrivals = [get_arrival_in_minutes_from_now(now, x) for x in southbound_trains]
 
     n = [str(x) for x in nortbound_arrivals if x>= MINIMUM_MINUTES_DISPLAY]
     s = [str(x) for x in southound_arrivals if x>= MINIMUM_MINUTES_DISPLAY]
-
-    print("Now: ", now)
-    print("Trains: ", nortbound_trains, southbound_trains)
 
     n0 = n[0] if len(n) > 0 else '-'
     n1 = n[1] if len(n) > 1 else '-'
@@ -44,8 +44,8 @@ def get_arrival_times():
     return n0,n1,s0,s1
 
 def update_text(n0, n1, s0, s1):
-    text_lines[1].text = "%s,%s m" % (n0,n1)
-    text_lines[3].text = "%s,%s m" % (s0,s1)
+    text_lines[2].text = "%s,%s m" % (n0,n1)
+    text_lines[4].text = "%s,%s m" % (s0,s1)
     display.show(group)
 
 # --- Display setup ---
@@ -56,32 +56,32 @@ network = Network(status_neopixel=NEOPIXEL, debug=False)
 # --- Drawing setup ---
 group = displayio.Group()
 bitmap = displayio.OnDiskBitmap(open(BACKGROUND_IMAGE, 'rb'))
-tile_grid = displayio.TileGrid(bitmap, pixel_shader=getattr(bitmap, 'pixel_shader', displayio.ColorConverter()))
-group.append(tile_grid)
-color = displayio.Palette(2)
-color = [0x444444, 0xDD8000]  # [dim white, gold]
+colors = [0x444444, 0xDD8000]  # [dim white, gold]
 
 font = bitmap_font.load_font("fonts/6x10.bdf")
 text_lines = [
-    adafruit_display_text.label.Label(font, color=color[0], x=20, y=3, text="Queens"),
-    adafruit_display_text.label.Label(font, color=color[1], x=20, y=11, text="- mins"),
-    adafruit_display_text.label.Label(font, color=color[0], x=20, y=20, text="Church"),
-    adafruit_display_text.label.Label(font, color=color[1], x=20, y=28, text="- mins"),
+    displayio.TileGrid(bitmap, pixel_shader=getattr(bitmap, 'pixel_shader', displayio.ColorConverter())),
+    adafruit_display_text.label.Label(font, color=colors[0], x=20, y=3, text="Queens"),
+    adafruit_display_text.label.Label(font, color=colors[1], x=20, y=11, text="- mins"),
+    adafruit_display_text.label.Label(font, color=colors[0], x=20, y=20, text="Church"),
+    adafruit_display_text.label.Label(font, color=colors[1], x=20, y=28, text="- mins"),
 ]
 for x in text_lines:
     group.append(x)
-
 display.show(group)
-network.get_local_time()
 
 error_counter = 0
+last_time_sync = None
 while True:
     try:
+        if last_time_sync is None or time.monotonic() > last_time_sync + SYNC_TIME_DELAY:
+            # Sync clock to minimize time drift
+            network.get_local_time()
+            last_time_sync = time.monotonic()
         arrivals = get_arrival_times()
         update_text(*arrivals)
     except (ValueError, RuntimeError) as e:
         print("Some error occured, retrying! -", e)
-        # Workaround for "Repeated socket failures" error
         error_counter = error_counter + 1
         if error_counter > ERROR_RESET_THRESHOLD:
             microcontroller.reset()
