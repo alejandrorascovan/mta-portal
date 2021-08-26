@@ -1,4 +1,5 @@
 import time
+import microcontroller
 from board import NEOPIXEL
 import displayio
 import adafruit_display_text.label
@@ -13,6 +14,7 @@ DATA_LOCATION = ["data"]
 UPDATE_DELAY = 15
 MINIMUM_MINUTES_DISPLAY = 9
 BACKGROUND_IMAGE = 'g-dashboard.bmp'
+ERROR_RESET_THRESHOLD = 3
 
 def get_arrival_in_minutes_from_now(now, date_str):
     train_date = datetime.fromisoformat(date_str).replace(tzinfo=None) # Remove tzinfo to be able to diff dates
@@ -31,6 +33,9 @@ def get_arrival_times():
     n = [str(x) for x in nortbound_arrivals if x>= MINIMUM_MINUTES_DISPLAY]
     s = [str(x) for x in southound_arrivals if x>= MINIMUM_MINUTES_DISPLAY]
 
+    print("Now: ", now)
+    print("Trains: ", nortbound_trains, southbound_trains)
+
     n0 = n[0] if len(n) > 0 else '-'
     n1 = n[1] if len(n) > 1 else '-'
     s0 = s[0] if len(s) > 0 else '-'
@@ -39,8 +44,8 @@ def get_arrival_times():
     return n0,n1,s0,s1
 
 def update_text(n0, n1, s0, s1):
-    text_line2.text = "%s,%s m" % (n0,n1)
-    text_line4.text = "%s,%s m" % (s0,s1)
+    text_lines[1].text = "%s,%s m" % (n0,n1)
+    text_lines[3].text = "%s,%s m" % (s0,s1)
     display.show(group)
 
 # --- Display setup ---
@@ -54,28 +59,31 @@ bitmap = displayio.OnDiskBitmap(open(BACKGROUND_IMAGE, 'rb'))
 tile_grid = displayio.TileGrid(bitmap, pixel_shader=getattr(bitmap, 'pixel_shader', displayio.ColorConverter()))
 group.append(tile_grid)
 color = displayio.Palette(2)
-color[0] = 0x444444  # dim white
-color[1] = 0xDD8000  # gold
+color = [0x444444, 0xDD8000]  # [dim white, gold]
 
 font = bitmap_font.load_font("fonts/6x10.bdf")
-text_line1 = adafruit_display_text.label.Label(font, color=color[0], x=20, y=3, text="Queens")
-text_line2 = adafruit_display_text.label.Label(font, color=color[1], x=20, y=11, text="- mins")
-text_line3 = adafruit_display_text.label.Label(font, color=color[0], x=20, y=20, text="Church")
-text_line4 = adafruit_display_text.label.Label(font, color=color[1], x=20, y=28, text="- mins")
-group.append(text_line1)
-group.append(text_line2)
-group.append(text_line3)
-group.append(text_line4)
+text_lines = [
+    adafruit_display_text.label.Label(font, color=color[0], x=20, y=3, text="Queens"),
+    adafruit_display_text.label.Label(font, color=color[1], x=20, y=11, text="- mins"),
+    adafruit_display_text.label.Label(font, color=color[0], x=20, y=20, text="Church"),
+    adafruit_display_text.label.Label(font, color=color[1], x=20, y=28, text="- mins"),
+]
+for x in text_lines:
+    group.append(x)
 
 display.show(group)
 network.get_local_time()
 
+error_counter = 0
 while True:
     try:
-        print("Getting arrival times...")
         arrivals = get_arrival_times()
         update_text(*arrivals)
     except (ValueError, RuntimeError) as e:
         print("Some error occured, retrying! -", e)
+        # Workaround for "Repeated socket failures" error
+        error_counter = error_counter + 1
+        if error_counter > ERROR_RESET_THRESHOLD:
+            microcontroller.reset()
 
     time.sleep(UPDATE_DELAY)
